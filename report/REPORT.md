@@ -64,8 +64,8 @@ Chạy `ChunkingStrategyComparator().compare()` trên tài liệu `data/data.md`
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Preserves Context? |
 |-----------|----------|-------------|------------|-------------------|
-| data.md | FixedSizeChunker (`fixed_size`) | 246 | 199.81 | Yes |
-| data.md | SentenceChunker (`by_sentences`) | 108 | 338.48 | Yes |
+| data.md | FixedSizeChunker (`fixed_size`) | 14 | 199.81 | Yes |
+| data.md | SentenceChunker (`by_sentences`) | 10 | 283.48 | Yes |
 
 
 
@@ -83,8 +83,8 @@ Chạy `ChunkingStrategyComparator().compare()` trên tài liệu `data/data.md`
 
 | Tài liệu | Strategy | Chunk Count | Avg Length | Retrieval Quality? |
 |-----------|----------|-------------|------------|--------------------|
-| data.md | best baseline: FixedSizeChunker | 246 | 199.81 | Medium |
-| data.md | **của tôi: RecursiveChunker** | 209 | 173.89 | High |
+| data.md | best baseline: FixedSizeChunker | 14 | 199.81 | Medium |
+| data.md | **của tôi: RecursiveChunker** | 25 | 133.89 | High |
 
 
 
@@ -93,8 +93,11 @@ Chạy `ChunkingStrategyComparator().compare()` trên tài liệu `data/data.md`
 | Thành viên | Strategy | Retrieval Score (/10) | Điểm mạnh | Điểm yếu |
 |-----------|----------|----------------------|-----------|----------|
 | Tôi | RecursiveChunker | 9 | Giữ ngữ cảnh theo cấu trúc tài liệu, chunk mạch lạc | Cần tuning `chunk_size` cho từng bộ dữ liệu |
-| [Tên] | Chưa cập nhật | Chưa cập nhật | Chưa cập nhật | Chưa cập nhật |
-| [Tên] | Chưa cập nhật | Chưa cập nhật | Chưa cập nhật | Chưa cập nhật |
+| Dũng |SentenceChunker |7.0 |Giữ ngữ cảnh tốt, xử lý văn bản phức tạp | |
+| Huy | FixedSizeChunker | 7.5 | Đơn giản, ổn định, dễ kiểm soát kích thước chunk | Dễ cắt ngang ý, mất ngữ cảnh ở đoạn dài |
+| Đăng | SentenceChunker | 7.0 | Tạo chunk tự nhiên, dễ đọc | Chunk có thể quá dài hoặc quá ngắn tùy câu |
+| Tuấn |  RecursiveChunker | 8.0 | Tối ưu theo domain, cân bằng giữa context và size | Cần tinh chỉnh nhiều, khó triển khai hơn baseline |
+| Đạt |RecursiveChunker |7.5 |Giữ ngữ cảnh tốt, chunk rõ nghĩa | |
 
 **Strategy nào tốt nhất cho domain này? Tại sao?**
 > Với bộ tài liệu hiện tại, RecursiveChunker là lựa chọn tốt nhất vì dữ liệu có nhiều đoạn dài, tiêu đề và cấu trúc phân mục rõ ràng. Strategy này giúp cắt theo ranh giới ngữ nghĩa thay vì cắt cơ học, nên chất lượng chunk ổn định hơn cho retrieval. Trong các thử nghiệm baseline, nó giữ được cân bằng tốt giữa độ dài chunk và tính liên kết nội dung.
@@ -142,10 +145,10 @@ Giải thích cách tiếp cận của bạn khi implement các phần chính tr
 | Pair | Sentence A | Sentence B | Dự đoán | Actual Score | Đúng? |
 |------|-----------|-----------|---------|--------------|-------|
 | 1 |Reading books is fun | i love reading novel| high |0.95 | True |
-| 2 |My favorite color is blue |I prefer red over blue | high |0.7 | |
-| 3 |My sister is very generous. | My brother is very kind. | high  |0.5 | |
-| 4 | I study programming languages.   | I am learning Python.   | high  |0.85 | |
-| 5 |Wie heist du | what is your name | high |0.04| |
+| 2 |My favorite color is blue |I prefer red over blue | high |0.7 |True |
+| 3 |My sister is very generous. | My brother is very kind. | high  |0.5 |True |
+| 4 | I study programming languages.   | I am learning Python.   | high  |0.85 | True|
+| 5 |Wie heist du | what is your name | high |0.04| False|
 
 **Kết quả nào bất ngờ nhất? Điều này nói gì về cách embeddings biểu diễn nghĩa?**
 Case cuối bất ngờ nhất vì đó là 2 câu chung nghĩa nhưng ở 2 ngôn ngữ khác nhau, tuy vậy theo hash text thì nó sẽ không liên quan.
@@ -159,36 +162,36 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | # | Query | Gold Answer |
 |---|-------|-------------|
-| 1 | | |
-| 2 | | |
-| 3 | | |
-| 4 | | |
-| 5 | | |
+| 1 | Trong lý giải về Ngũ hành, quy luật Tương sinh diễn ra như thế nào|Quy luật Tương sinh giữa các hành bao gồm: *Kim sinh Thủy, Thủy sinh Mộc, Mộc sinh Hỏa, Hỏa sinh Thổ, và Thổ sinh Kim*. Ngược lại, quy luật Tương khắc là: Kim khắc Mộc, Mộc khắc Thổ, Thổ khắc Thủy, Thủy khắc Hỏa, và Hỏa khắc Kim |
+| 2 |Làm thế nào để tìm được Bản Mệnh thuộc hành nào trong Ngũ hành? |Để tìm Bản Mệnh, người xem số cần rõ tuổi của mình ở hai hàng *Can và Chi*, sau đó tra bảng để xác định mình thuộc hành nào trong Ngũ hành (Kim, Mộc, Thủy, Hỏa, Thổ). Có tất cả *Thập Thiên Can* (Giáp, Ất, Bính, Đinh, Mậu, Kỷ, Canh, Tân, Nhâm, Qúy) phối hợp với các Địa chi. |
+| 3 |Quy tắc đổi giờ đồng hồ sang giờ hàng Chi trong Tử Vi là gì? |Một ngày có 24 giờ đồng hồ và cứ *hai giờ đồng hồ tương ứng với một giờ hàng Chi*. Ví dụ: giờ Tý bắt đầu từ 23 giờ đến 1 giờ sáng, giờ Sửu từ 1 giờ đến 3 giờ sáng, và tiếp tục như vậy cho đến hết 12 ch |
+| 4 |Chùm sao thuộc Tử Vi tinh hệ bao gồm những sao nào? |Chùm sao này gồm có 5 sao: *Tử Vi, Liêm Trinh, Thiên Đồng, Vũ Khúc và Thiên Cơ*. Việc an các sao này dựa trên Cục và ngày sinh của mỗi ngườ |
+| 5 |Một lá số Tử Vi được chia làm bao nhiêu ô và tên gọi của các ô này dựa trên quy tắc nào? |Lá số được chia làm *12 ô*, mỗi ô gọi là một cung. Tên riêng của mỗi cung được gọi theo *Thập Nhị Địa Chi*, bao gồm: Tý, Sửu, Dần, Mão, Thìn, Tỵ, Ngọ, Mùi, Thân, Dậu, Tuất, Hợi. |
 
 ### Kết Quả Của Tôi
 
 | # | Query | Top-1 Retrieved Chunk (tóm tắt) | Score | Relevant? | Agent Answer (tóm tắt) |
 |---|-------|--------------------------------|-------|-----------|------------------------|
-| 1 | | | | | |
-| 2 | | | | | |
-| 3 | | | | | |
-| 4 | | | | | |
-| 5 | | | | | |
+| 1 | Trong lý giải về Ngũ hành, quy luật Tương sinh diễn ra như thế nào |**Kim sinh Thủy**: Kim loại (như vàng, bạc) khi được nung chảy sẽ tạo thành chất lỏng, tượng trưng cho nước (Thủy). **Hỏa sinh Thổ**: Lửa (Hỏa) khi đốt cháy chất hữu cơ sẽ tạo ra tro, là phần đất (Thổ). **Thủy sinh Mộc**: Nước (Thủy) giúp cho cây cối (Mộc) phát triển và sinh trưởng.**Thổ sinh Kim**: Đất (Thổ) chứa khoáng sản, từ đó hình thành các kim loại (Kim). **Mộc sinh Hỏa**: Cây cối (Mộc) khi bị đốt sẽ cháy tạo thành lửa (Hỏa). | 0.48 | Có | Agent trả lời đúng 5 cặp Tương sinh và bổ sung 5 cặp Tương khắc theo đúng nội dung tài liệu |
+| 2 | Làm thế nào để tìm được Bản Mệnh thuộc hành nào trong Ngũ hành? | Chunk trả ra tra cứu Ngũ Hành của Thiên Can, tra cứu Ngũ Hành của Địa Chỉ | 0.46 | Có | Agent trả lời đúng quy trình xác định Bản Mệnh: xác định Can-Chi, tra bảng, suy ra hành tương ứng |
+| 3 | Quy tắc đổi giờ đồng hồ sang giờ hàng Chi trong Tử Vi là gì? | Một ngày có 24 giờ đồng hồ, và mỗi giờ hàng Chi tương ứng với 2 giờ đồng hồ. Sau đó có bảng tra cứu | 0.50 | Có | Agent trả lời đúng nguyên tắc đổi giờ |
+| 4 | Chùm sao thuộc Tử Vi tinh hệ bao gồm những sao nào? | Chùm sao thuộc Tử Vi tinh hệ bao gồm các sao: Tử Vi, Liêm Trinh, Thiên Đồng, Vũ Khúc và Thiên Cơ. | 0.57 | Có | Agent liệt kê đúng 5 sao trong chùm Tử Vi tinh hệ |
+| 5 | Một lá số Tử Vi được chia làm bao nhiêu ô và tên gọi của các ô này dựa trên quy tắc nào? | Một lá số Tử Vi được chia làm 12 ô, tương ứng với 12 cung. Tên gọi của các ô này dựa trên quy tắc của Thập Nhị Địa Chi, bao gồm các cung: Tý, Sửu, Dần, Mão, Thìn, Tỵ, Ngọ, Mùi, Thân, Dậu, Tuất, Hợi. Các cung được sắp xếp theo chiều thuận kim đồng hồ bắt đầu từ cung Tý. Vị trí và tên của mỗi cung không bao giờ thay đổi. | 0.55 | Có | Agent trả lời đúng số lượng 12 cung và quy tắc đặt tên theo Thập Nhị Địa Chi |
 
-**Bao nhiêu queries trả về chunk relevant trong top-3?** __ / 5
+**Bao nhiêu queries trả về chunk relevant trong top-3?** 5/ 5
 
 ---
 
 ## 7. What I Learned (5 điểm — Demo)
 
 **Điều hay nhất tôi học được từ thành viên khác trong nhóm:**
-> *Viết 2-3 câu:*
+> *Chủ yếu là bọn em hỗ trợ nhau trong việc tìm embedding, còn lại thì các strategy của thành viên trong nhóm đều khá cơ bản*
 
 **Điều hay nhất tôi học được từ nhóm khác (qua demo):**
-> *Viết 2-3 câu:*
+> *?*
 
 **Nếu làm lại, tôi sẽ thay đổi gì trong data strategy?**
-> *Viết 2-3 câu:*
+> * "Thay đổi" thì em chưa nghĩ ra, nhưng em nghĩ có thể sẽ tìm hiểu sâu hơn về việc có thể đưa ra kích thước chunk phù hợp tùy vào văn bản đầu vào*
 
 ---
 
@@ -196,12 +199,12 @@ Chạy 5 benchmark queries của nhóm trên implementation cá nhân của bạ
 
 | Tiêu chí | Loại | Điểm tự đánh giá |
 |----------|------|-------------------|
-| Warm-up | Cá nhân | / 5 |
-| Document selection | Nhóm | / 10 |
-| Chunking strategy | Nhóm | / 15 |
-| My approach | Cá nhân | / 10 |
-| Similarity predictions | Cá nhân | / 5 |
-| Results | Cá nhân | / 10 |
-| Core implementation (tests) | Cá nhân | / 30 |
-| Demo | Nhóm | / 5 |
-| **Tổng** | | **/ 100** |
+| Warm-up | Cá nhân | 5/ 5 |
+| Document selection | Nhóm | 10/ 10 |
+| Chunking strategy | Nhóm |13 / 15 |
+| My approach | Cá nhân | 10/ 10 |
+| Similarity predictions | Cá nhân | 5/ 5 |
+| Results | Cá nhân |10 / 10 |
+| Core implementation (tests) | Cá nhân | 30/ 30 |
+| Demo | Nhóm | 4/ 5 |
+| **Tổng** | | **87/ 90** |
