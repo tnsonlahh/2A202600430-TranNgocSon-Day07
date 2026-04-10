@@ -15,16 +15,13 @@ from src.embeddings import (
     OpenAIEmbedder,
     _mock_embed,
 )
+from src.chunking import RecursiveChunker
 from src.models import Document
 from src.store import EmbeddingStore
 
 SAMPLE_FILES = [
-    "data/python_intro.txt",
-    "data/vector_store_notes.md",
-    "data/rag_system_design.md",
-    "data/customer_support_playbook.txt",
-    "data/chunking_experiment_report.md",
-    "data/vi_retrieval_notes.md",
+    "data\data.md",
+
 ]
 
 
@@ -56,10 +53,58 @@ def load_documents_from_files(file_paths: list[str]) -> list[Document]:
     return documents
 
 
+def chunk_documents(documents: list[Document], chunk_size: int = 1500) -> list[Document]:
+    """Split large documents into smaller chunks for safer embedding."""
+    chunker = RecursiveChunker(chunk_size=chunk_size)
+    chunked_docs: list[Document] = []
+    for doc in documents:
+        chunks = chunker.chunk(doc.content)
+        if len(chunks) <= 1:
+            chunked_docs.append(doc)
+            continue
+        for index, chunk in enumerate(chunks):
+            chunked_docs.append(
+                Document(
+                    id=f"{doc.id}#chunk{index}",
+                    content=chunk,
+                    metadata={
+                        **doc.metadata,
+                        "parent_id": doc.id,
+                        "chunk_index": index,
+                    },
+                )
+            )
+    return chunked_docs
+
+
 def demo_llm(prompt: str) -> str:
     """A simple mock LLM for manual RAG testing."""
-    preview = prompt[:400].replace("\n", " ")
+    preview = prompt[:100].replace("\n", " ")
     return f"[DEMO LLM] Generated answer from prompt preview: {preview}..."
+
+
+def build_openai_llm() -> callable:
+    """Create an OpenAI-backed LLM callable. Falls back to demo_llm on errors."""
+    model = os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+
+    def _llm(prompt: str) -> str:
+        try:
+            from openai import OpenAI
+
+            client = OpenAI()
+            response = client.chat.completions.create(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful assistant."},
+                    {"role": "user", "content": prompt},
+                ],
+            )
+            message = response.choices[0].message.content
+            return message.strip() if message else ""
+        except Exception as exc:
+            return f"[DEMO LLM] OpenAI call failed: {exc}"
+
+    return _llm
 
 
 def run_manual_demo(question: str | None = None, sample_files: list[str] | None = None) -> int:
@@ -101,7 +146,10 @@ def run_manual_demo(question: str | None = None, sample_files: list[str] | None 
     print(f"\nEmbedding backend: {getattr(embedder, '_backend_name', embedder.__class__.__name__)}")
 
     store = EmbeddingStore(collection_name="manual_test_store", embedding_fn=embedder)
-    store.add_documents(docs)
+    chunked_docs = chunk_documents(docs)
+    if len(chunked_docs) != len(docs):
+        print(f"\nChunked documents: {len(docs)} -> {len(chunked_docs)}")
+    store.add_documents(chunked_docs)
 
     print(f"\nStored {store.get_collection_size()} documents in EmbeddingStore")
     print("\n=== EmbeddingStore Search Test ===")
@@ -112,7 +160,10 @@ def run_manual_demo(question: str | None = None, sample_files: list[str] | None 
         print(f"   content preview: {result['content'][:120].replace(chr(10), ' ')}...")
 
     print("\n=== KnowledgeBaseAgent Test ===")
-    agent = KnowledgeBaseAgent(store=store, llm_fn=demo_llm)
+    llm_fn = demo_llm
+    if provider == "openai":
+        llm_fn = build_openai_llm()
+    agent = KnowledgeBaseAgent(store=store, llm_fn=llm_fn)
     print(f"Question: {query}")
     print("Agent answer:")
     print(agent.answer(query, top_k=3))
